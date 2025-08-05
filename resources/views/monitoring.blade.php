@@ -1,7 +1,8 @@
 @extends('layouts.app')
-
 @section('content')
 <div class="container">
+    @include('litmas._nav')
+
     <h3>Monitoring & Rekap Data Litmas</h3>
 
     <form method="GET" action="{{ route('litmas.monitoring') }}" class="mb-3 row g-2 align-items-end">

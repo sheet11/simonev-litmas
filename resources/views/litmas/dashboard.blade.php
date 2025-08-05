@@ -2,8 +2,9 @@
 
 @section('content')
 <div class="container">
-    <h3>Dashboard Statistik Litmas</h3>
+    @include('litmas._nav') <!-- INI BARIS MENU UTAMA -->
 
+    <h3>Dashboard Statistik Litmas</h3>
     <div class="row">
         <div class="col-md-6 mb-4">
             <canvas id="statusChart"></canvas>

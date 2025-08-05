@@ -2,6 +2,7 @@
 
 @section('content')
 <div class="container">
+    @include('litmas._nav')
     <h3>Monitoring & Rekap Data Litmas</h3>
 
     <form method="GET" action="{{ route('litmas.monitoring') }}" class="mb-3 row g-2 align-items-end">
@@ -46,9 +47,7 @@
                 <th>Prodi</th>
                 <th>Status</th>
                 <th>Link/File Capaian</th>
-                @if(auth()->user()->role === 'ppm')
-                    <th>Aksi</th>
-                @endif
+                <th>Aksi</th>
             </tr>
         </thead>
         <tbody>
@@ -65,6 +64,8 @@
                         <span class="badge bg-warning text-dark">{{ $item->status }}</span>
                     @elseif($item->status === 'Ditolak')
                         <span class="badge bg-danger">{{ $item->status }}</span>
+                    @elseif($item->status === 'Menunggu Verifikasi')
+                        <span class="badge bg-primary">{{ $item->status }}</span>
                     @else
                         <span class="badge bg-secondary">{{ $item->status }}</span>
                     @endif
@@ -77,20 +78,24 @@
                         <a href="{{ $item->luaran_link }}" target="_blank">[Link]</a>
                     @endif
                 </td>
-                @if(auth()->user()->role === 'ppm')
                 <td>
-                    @if($item->status !== 'Tercapai')
-                        <form action="{{ route('litmas.verifikasi', $item->id) }}" method="POST" style="display:inline;">
-                            @csrf
-                            <button name="action" value="Tercapai" class="btn btn-success btn-sm" onclick="return confirm('Setujui capaian ini?')">Setujui</button>
-                            <button name="action" value="Revisi" class="btn btn-warning btn-sm" onclick="return confirm('Minta revisi?')">Revisi</button>
-                            <button name="action" value="Ditolak" class="btn btn-danger btn-sm" onclick="return confirm('Tolak capaian ini?')">Tolak</button>
-                        </form>
+                    @if(auth()->user()->role === 'ppm')
+                        @if($item->status !== 'Tercapai')
+                            <form action="{{ route('litmas.verifikasi', $item->id) }}" method="POST" style="display:inline;">
+                                @csrf
+                                <button name="action" value="Tercapai" class="btn btn-success btn-sm">Setujui</button>
+                                <button name="action" value="Revisi" class="btn btn-warning btn-sm">Revisi</button>
+                                <button name="action" value="Ditolak" class="btn btn-danger btn-sm">Tolak</button>
+                            </form>
+                        @else
+                            <span class="text-success">Sudah Disetujui</span>
+                        @endif
+                    @elseif(auth()->user()->role === 'ketua_pelaksana' && $item->status !== 'Tercapai')
+                        <a href="{{ route('litmas.editLuaran', $item->id) }}" class="btn btn-info btn-sm">Upload Capaian</a>
                     @else
-                        <span class="text-success">Sudah Disetujui</span>
+                        <span class="text-muted">-</span>
                     @endif
                 </td>
-                @endif
             </tr>
             @empty
             <tr>

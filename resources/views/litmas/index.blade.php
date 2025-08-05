@@ -1,11 +1,11 @@
 @extends('layouts.app')
-
 @section('content')
 <div class="container">
-    <h3>Data Litmas</h3>
-    @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
+    @include('litmas._nav')
+    <!-- ...lanjutan tabel daftar litmas... -->
+
+    <h3>Daftar Data Litmas</h3>
+    {{-- Tabel, tombol tambah, dll --}}
     <a href="{{ route('litmas.create') }}" class="btn btn-primary mb-3">Tambah Data Litmas</a>
 
     <table class="table table-bordered table-striped">
@@ -30,7 +30,17 @@
                 <td>{{ $item->prodi }}</td>
                 <td>{{ $item->luaran_wajib }}</td>
                 <td>{{ $item->luaran_tambahan }}</td>
-                <td>{{ $item->status }}</td>
+                <td>
+                    @if($item->status === 'Tercapai')
+                        <span class="badge bg-success">{{ $item->status }}</span>
+                    @elseif($item->status === 'Revisi')
+                        <span class="badge bg-warning text-dark">{{ $item->status }}</span>
+                    @elseif($item->status === 'Ditolak')
+                        <span class="badge bg-danger">{{ $item->status }}</span>
+                    @else
+                        <span class="badge bg-secondary">{{ $item->status }}</span>
+                    @endif
+                </td>
                 <td>
                     <a href="{{ route('litmas.edit', $item->id) }}" class="btn btn-warning btn-sm">Edit</a>
                     <form action="{{ route('litmas.destroy', $item->id) }}" method="POST" style="display:inline;">
@@ -38,9 +48,6 @@
                         @method('DELETE')
                         <button onclick="return confirm('Hapus data ini?')" class="btn btn-danger btn-sm">Hapus</button>
                     </form>
-                    @if(Auth::user()->role === 'ketua_pelaksana')
-                        <a href="{{ route('litmas.editLuaran', $item->id) }}" class="btn btn-info btn-sm">Input Capaian</a>
-                    @endif
                 </td>
             </tr>
             @empty

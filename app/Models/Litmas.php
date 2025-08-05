@@ -9,7 +9,25 @@ class Litmas extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'judul', 'tahun', 'ketua', 'prodi', 'luaran_wajib', 'luaran_tambahan', 'status',
+
+
+protected $fillable = [
+    'judul',
+    'tahun',
+    'ketua',
+    'prodi',
+    'luaran_wajib',
+    'luaran_tambahan',
+    'luaran_file',
+    'luaran_link',
+    'status',
+    'user_id' // <-- Tambahkan baris ini!
+
+
+
+
+
+
+
     ];
 }

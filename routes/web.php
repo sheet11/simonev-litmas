@@ -6,7 +6,7 @@ use App\Http\Controllers\LitmasController;
 
 // Halaman welcome
 Route::get('/', function () {
-    return view('welcome');
+    return view('landing');
 });
 
 // Auth bawaan Laravel

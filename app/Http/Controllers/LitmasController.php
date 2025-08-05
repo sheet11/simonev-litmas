@@ -7,14 +7,18 @@ use App\Models\Litmas;
 
 class LitmasController extends Controller
 {
-    // Tampilkan daftar data litmas
+    // Daftar data Litmas
     public function index()
     {
-        $litmas = Litmas::orderBy('tahun', 'desc')->get();
+        $query = Litmas::query();
+        if (auth()->user()->role === 'ketua_pelaksana') {
+            $query->where('user_id', auth()->id());
+        }
+        $litmas = $query->orderBy('tahun', 'desc')->get();
         return view('litmas.index', compact('litmas'));
     }
 
-    // Tampilkan form tambah data litmas
+    // Form tambah Litmas
     public function create()
     {
         return view('litmas.create');
@@ -29,14 +33,19 @@ class LitmasController extends Controller
             'ketua' => 'required|string',
             'prodi' => 'required|string',
         ]);
-        Litmas::create($request->all());
+        $data = $request->all();
+        $data['user_id'] = auth()->id(); // User pemilik data
+        Litmas::create($data);
         return redirect()->route('litmas.index')->with('success', 'Data Litmas berhasil disimpan!');
     }
 
-    // Tampilkan form edit data
+    // Form edit data
     public function edit($id)
     {
         $litmas = Litmas::findOrFail($id);
+        if (auth()->user()->role === 'ketua_pelaksana' && $litmas->user_id !== auth()->id()) {
+            abort(403, 'Akses ditolak');
+        }
         return view('litmas.edit', compact('litmas'));
     }
 
@@ -50,6 +59,9 @@ class LitmasController extends Controller
             'prodi' => 'required|string',
         ]);
         $litmas = Litmas::findOrFail($id);
+        if (auth()->user()->role === 'ketua_pelaksana' && $litmas->user_id !== auth()->id()) {
+            abort(403, 'Akses ditolak');
+        }
         $litmas->update($request->all());
         return redirect()->route('litmas.index')->with('success', 'Data Litmas berhasil diupdate!');
     }
@@ -58,14 +70,20 @@ class LitmasController extends Controller
     public function destroy($id)
     {
         $litmas = Litmas::findOrFail($id);
+        if (auth()->user()->role === 'ketua_pelaksana' && $litmas->user_id !== auth()->id()) {
+            abort(403, 'Akses ditolak');
+        }
         $litmas->delete();
         return redirect()->route('litmas.index')->with('success', 'Data Litmas dihapus!');
     }
 
-    // Tampilkan form input/upload capaian luaran
+    // Form input/upload capaian luaran
     public function editLuaran($id)
     {
         $litmas = Litmas::findOrFail($id);
+        if (auth()->user()->role === 'ketua_pelaksana' && $litmas->user_id !== auth()->id()) {
+            abort(403, 'Akses ditolak');
+        }
         return view('litmas.edit_luaran', compact('litmas'));
     }
 
@@ -77,6 +95,9 @@ class LitmasController extends Controller
             'luaran_link' => 'nullable|string|max:255',
         ]);
         $litmas = Litmas::findOrFail($id);
+        if (auth()->user()->role === 'ketua_pelaksana' && $litmas->user_id !== auth()->id()) {
+            abort(403, 'Akses ditolak');
+        }
 
         if ($request->hasFile('luaran_file')) {
             $path = $request->file('luaran_file')->store('luaran', 'public');
@@ -85,9 +106,8 @@ class LitmasController extends Controller
         if ($request->luaran_link) {
             $litmas->luaran_link = $request->luaran_link;
         }
-        $litmas->status = 'Menunggu Verifikasi'; // atau 'Proses Verifikasi'
+        $litmas->status = 'Menunggu Verifikasi'; // Setelah upload capaian
         $litmas->save();
-
         return redirect()->route('litmas.index')->with('success', 'Capaian luaran berhasil dilaporkan!');
     }
 
@@ -99,6 +119,9 @@ class LitmasController extends Controller
         $tahun = $request->input('tahun');
 
         $query = Litmas::query();
+        if (auth()->user()->role === 'ketua_pelaksana') {
+            $query->where('user_id', auth()->id());
+        }
         if ($status) $query->where('status', $status);
         if ($prodi) $query->where('prodi', 'like', "%$prodi%");
         if ($tahun) $query->where('tahun', $tahun);
@@ -106,46 +129,43 @@ class LitmasController extends Controller
         $litmas = $query->orderBy('tahun', 'desc')->get();
         $prodis = Litmas::select('prodi')->distinct()->pluck('prodi');
         $tahuns = Litmas::select('tahun')->distinct()->pluck('tahun');
-        $statuses = ['Belum Tercapai', 'Tercapai', 'Revisi', 'Ditolak'];
+        $statuses = ['Belum Tercapai', 'Menunggu Verifikasi', 'Tercapai', 'Revisi', 'Ditolak'];
 
         return view('litmas.monitoring', compact('litmas', 'prodis', 'tahuns', 'statuses', 'status', 'prodi', 'tahun'));
     }
-     
 
-// Method Dasboard
-public function dashboard()
-{
-    $rekapStatus = \App\Models\Litmas::select('status', \DB::raw('count(*) as total'))
-        ->groupBy('status')
-        ->pluck('total', 'status');
+    // Dashboard Statistik Grafik
+    public function dashboard()
+    {
+        $rekapStatus = Litmas::select('status', \DB::raw('count(*) as total'))
+            ->groupBy('status')
+            ->pluck('total', 'status');
 
-    $rekapProdi = \App\Models\Litmas::select('prodi', \DB::raw('count(*) as total'))
-        ->groupBy('prodi')
-        ->pluck('total', 'prodi');
+        $rekapProdi = Litmas::select('prodi', \DB::raw('count(*) as total'))
+            ->groupBy('prodi')
+            ->pluck('total', 'prodi');
 
-    $rekapTahun = \App\Models\Litmas::select('tahun', \DB::raw('count(*) as total'))
-        ->groupBy('tahun')
-        ->orderBy('tahun')
-        ->pluck('total', 'tahun');
+        $rekapTahun = Litmas::select('tahun', \DB::raw('count(*) as total'))
+            ->groupBy('tahun')
+            ->orderBy('tahun')
+            ->pluck('total', 'tahun');
 
-    return view('litmas.dashboard', compact('rekapStatus', 'rekapProdi', 'rekapTahun'));
-}
-
-
- // Verifikasi 
-public function verifikasi(Request $request, $id)
-{
-    $action = $request->input('action');
-    $allowed = ['Tercapai', 'Revisi', 'Ditolak'];
-    if (!in_array($action, $allowed)) {
-        return back()->with('error', 'Aksi tidak valid!');
+        return view('litmas.dashboard', compact('rekapStatus', 'rekapProdi', 'rekapTahun'));
     }
 
-    $litmas = \App\Models\Litmas::findOrFail($id);
-    $litmas->status = $action;
-    $litmas->save();
+    // Verifikasi (oleh PPM)
+    public function verifikasi(Request $request, $id)
+    {
+        $action = $request->input('action');
+        $allowed = ['Tercapai', 'Revisi', 'Ditolak'];
+        if (!in_array($action, $allowed)) {
+            return back()->with('error', 'Aksi tidak valid!');
+        }
 
-    return back()->with('success', 'Status capaian berhasil diubah menjadi: ' . $action);
-}
+        $litmas = Litmas::findOrFail($id);
+        $litmas->status = $action;
+        $litmas->save();
 
+        return back()->with('success', 'Status capaian berhasil diubah menjadi: ' . $action);
+    }
 }
