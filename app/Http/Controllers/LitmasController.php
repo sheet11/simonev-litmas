@@ -7,6 +7,23 @@ use App\Models\Litmas;
 
 class LitmasController extends Controller
 {
+    private $listProdi = [
+        'D4 - Gizi dan Dietetika',
+        'D4 - Promosi Kesehatan',
+        'D3 - Gizi',
+        'D3 - Sanitasi',
+        'D3 - Teknologi Laboratorium Medis',
+        'D4 - Keperawatan',
+        'D3 - Keperawatan',
+        'D3 - Keperawatan (Kampus Curup)',
+        'Profesi - Pendidikan Profesi Ners',
+        'D4 - Kebidanan',
+        'D3 - Kebidanan',
+        'D3 - Kebidanan (Kampus Curup)',
+        'Profesi - Pendidikan Profesi Bidan',
+        'D3 - Farmasi',
+    ];
+
     // Daftar data Litmas
     public function index()
     {
@@ -21,7 +38,8 @@ class LitmasController extends Controller
     // Form tambah Litmas
     public function create()
     {
-        return view('litmas.create');
+        $prodis = $this->listProdi;
+        return view('litmas.create', compact('prodis'));
     }
 
     // Proses simpan data baru
@@ -46,7 +64,8 @@ class LitmasController extends Controller
         if (auth()->user()->role === 'ketua_pelaksana' && $litmas->user_id !== auth()->id()) {
             abort(403, 'Akses ditolak');
         }
-        return view('litmas.edit', compact('litmas'));
+        $prodis = $this->listProdi;
+        return view('litmas.edit', compact('litmas', 'prodis'));
     }
 
     // Proses update data
@@ -106,7 +125,7 @@ class LitmasController extends Controller
         if ($request->luaran_link) {
             $litmas->luaran_link = $request->luaran_link;
         }
-        $litmas->status = 'Menunggu Verifikasi'; // Setelah upload capaian
+        $litmas->status = 'Menunggu Verifikasi';
         $litmas->save();
         return redirect()->route('litmas.index')->with('success', 'Capaian luaran berhasil dilaporkan!');
     }
@@ -130,7 +149,6 @@ class LitmasController extends Controller
         $prodis = Litmas::select('prodi')->distinct()->pluck('prodi');
         $tahuns = Litmas::select('tahun')->distinct()->pluck('tahun');
         $statuses = ['Belum Tercapai', 'Menunggu Verifikasi', 'Tercapai', 'Revisi', 'Ditolak'];
-
         return view('litmas.monitoring', compact('litmas', 'prodis', 'tahuns', 'statuses', 'status', 'prodi', 'tahun'));
     }
 
